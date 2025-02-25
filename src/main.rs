@@ -373,35 +373,8 @@ fn main() -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
-    use std::io::Read;
 
     // 標準出力の取得を補助するための構造体
-    struct CaptureStdout {
-        old_stdout: Option<std::io::Stdout>,
-        buffer: Vec<u8>,
-    }
-
-    impl CaptureStdout {
-        fn new() -> Self {
-            CaptureStdout {
-                old_stdout: None,
-                buffer: Vec::new(),
-            }
-        }
-
-        fn start(&mut self) {
-            // 標準出力をリダイレクト
-            // 実際のアプリケーションでは、テストではなく
-            // ライブラリAPIを使用して出力を直接取得すべき
-        }
-
-        fn stop(&mut self) -> String {
-            // リダイレクトを停止して出力を取得
-            String::from_utf8_lossy(&self.buffer).to_string()
-        }
-    }
-
     // 基本的な関数をパースしてASTが正しく構築されるかテスト
     #[test]
     fn test_parse_function() {
