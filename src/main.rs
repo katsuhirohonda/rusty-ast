@@ -1,21 +1,9 @@
 use std::io;
 
+mod parser;
 mod visitor;
-use visitor::AstVisitor;
 
-use syn::{File, visit::Visit};
-
-// Rustのソースコード文字列からASTに変換
-fn parse_rust_source(source: &str) -> Result<syn::File, syn::Error> {
-    syn::parse_file(source)
-}
-
-// AST表示の例
-fn print_ast(file: &File) {
-    println!("AST for Rust code:");
-    let mut visitor = AstVisitor::new();
-    visitor.visit_file(file);
-}
+use parser::{parse_rust_source, print_ast};
 
 fn main() -> io::Result<()> {
     // 例1: ファイルからRustコードを読み込んでASTを表示
