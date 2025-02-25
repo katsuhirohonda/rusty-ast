@@ -1,9 +1,9 @@
-use std::fs;
 use std::io;
 use std::path::PathBuf;
 
 use clap::{ArgGroup, Parser};
-use rusty_ast::{AstVisitor, parse_rust_source};
+use rusty_ast::{AstVisitor, parse_rust_file, parse_rust_source};
+use syn::visit::Visit;
 
 /// Rust コードを解析して AST（抽象構文木）を表示するツール
 #[derive(Parser)]
@@ -39,9 +39,8 @@ fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
     // ファイルまたはコード文字列からASTを解析
-    let _ast = if let Some(_file_path) = cli.file {
-        // parse_rust_file(file_path)?
-        todo!()
+    let ast = if let Some(file_path) = cli.file {
+        parse_rust_file(file_path)?
     } else if let Some(code) = cli.code {
         parse_rust_source(&code).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
     } else {
@@ -52,9 +51,8 @@ fn main() -> io::Result<()> {
     match cli.format {
         OutputFormat::Text => {
             println!("AST for Rust code:");
-            //let mut visitor = AstVisitor::new();
-            // visitor.visit_file(&ast);
-            todo!()
+            let mut visitor = AstVisitor::new();
+            visitor.visit_file(&ast);
         }
         OutputFormat::Json => {
             // 注意: 実際にはJSONシリアライズの実装が必要
