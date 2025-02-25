@@ -5,49 +5,55 @@ use clap::{ArgGroup, Parser};
 use rusty_ast::{AstVisitor, parse_rust_file, parse_rust_source};
 use syn::visit::Visit;
 
-/// Rust コードを解析して AST（抽象構文木）を表示するツール
+/// Tool for parsing Rust code and displaying its AST
+///
+/// # Arguments
+/// * `file`: &str - path to the rust source file
+/// * `code`: &str - rust source code
+/// * `format`: &str - output format (text or json)
+/// * `indent`: usize - number of spaces to indent
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(group(ArgGroup::new("input").required(true).args(["file", "code"])))]
 struct Cli {
-    /// 解析するRustファイルのパス
+    /// Path to the Rust source file to parse
     #[arg(short, long, value_name = "FILE")]
     file: Option<PathBuf>,
 
-    /// 直接解析するRustコード（文字列）
+    /// Rust code to parse (string)
     #[arg(short, long, value_name = "CODE")]
     code: Option<String>,
 
-    /// 出力形式（text または json）
+    /// Output format (text or json)
     #[arg(short = 'o', long, value_enum, default_value = "text")]
     format: OutputFormat,
 
-    /// インデントに使用するスペースの数
+    /// Number of spaces to indent
     #[arg(short, long, default_value_t = 2)]
     indent: usize,
 }
 
 #[derive(clap::ValueEnum, Clone)]
 enum OutputFormat {
-    /// テキスト形式（インデント付き）
+    /// Text format (indented)
     Text,
-    /// JSON形式
+    /// JSON format
     Json,
 }
 
 fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
-    // ファイルまたはコード文字列からASTを解析
+    // parse AST from file or code string
     let ast = if let Some(file_path) = cli.file {
         parse_rust_file(file_path)?
     } else if let Some(code) = cli.code {
         parse_rust_source(&code).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
     } else {
-        unreachable!("clap がどちらかの引数を要求するはず");
+        unreachable!("clap should require one of the arguments");
     };
 
-    // 出力形式に応じて表示
+    // display AST according to output format
     match cli.format {
         OutputFormat::Text => {
             println!("AST for Rust code:");
@@ -55,9 +61,10 @@ fn main() -> io::Result<()> {
             visitor.visit_file(&ast);
         }
         OutputFormat::Json => {
-            // 注意: 実際にはJSONシリアライズの実装が必要
-            // serde_jsonなどを使用して実装する
+            // note: actually, JSON serialization is required
+            // implement with serde_json or other libraries
             println!("JSON output is not implemented yet");
+            todo!()
         }
     }
 
