@@ -18,18 +18,6 @@ impl AstVisitor {
     fn print_indent(&self) -> String {
         " ".repeat(self.indent)
     }
-
-    // visit_with_name関数を修正 - T::visit を直接呼ぶことはできない
-    fn visit_with_name<'ast, T>(&mut self, node: &T, name: &str)
-    where
-        Self: Visit<'ast>,
-    {
-        println!("{}{}:", self.print_indent(), name);
-        self.indent += 2;
-        // 実際の処理は具体的な型に対して個別に実装する必要がある
-        // ここではジェネリックな呼び出しをサポートしない
-        self.indent -= 2;
-    }
 }
 
 impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
@@ -315,15 +303,6 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
             }
         }
     }
-}
-
-// Rustコードをファイルから読み込んでASTに変換
-fn parse_rust_file<P: AsRef<Path>>(path: P) -> io::Result<syn::File> {
-    let source = fs::read_to_string(path)?;
-    let syntax =
-        syn::parse_file(&source).map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
-
-    Ok(syntax)
 }
 
 // Rustのソースコード文字列からASTに変換
