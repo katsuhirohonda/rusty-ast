@@ -32,10 +32,7 @@ pub fn parse_rust_source(source: &str) -> Result<syn::File, syn::Error> {
 /// * `io::Error` - file read error
 /// * `syn::Error` - parse error (wrapped in io::Error)
 pub fn parse_rust_file<P: AsRef<Path>>(path: P) -> io::Result<syn::File> {
-    // ファイルからコードを読み込む
     let source = fs::read_to_string(path)?;
-
-    // ソースコードをパースしてASTを生成
     let syntax =
         syn::parse_file(&source).map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
 
@@ -63,7 +60,6 @@ mod tests {
 
     #[test]
     fn test_parse_rust_file() {
-        // 一時ファイルを作成
         let mut file = NamedTempFile::new().unwrap();
         let test_code = r#"
             fn test_function() {
@@ -71,14 +67,11 @@ mod tests {
             }
         "#;
 
-        // ファイルにコードを書き込む
         file.write_all(test_code.as_bytes()).unwrap();
         file.flush().unwrap();
 
-        // ファイルからパース
         let ast = parse_rust_file(file.path()).unwrap();
 
-        // 基本的な検証
         assert_eq!(ast.items.len(), 1);
         if let syn::Item::Fn(func) = &ast.items[0] {
             assert_eq!(func.sig.ident.to_string(), "test_function");
@@ -87,8 +80,6 @@ mod tests {
         }
     }
 
-    // 標準出力の取得を補助するための構造体
-    // 基本的な関数をパースしてASTが正しく構築されるかテスト
     #[test]
     fn test_parse_function() {
         let source = r#"
@@ -99,15 +90,15 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
 
-        // ファイルにはアイテムが1つ（関数定義）含まれているはず
+        // should be 1 item
         assert_eq!(file.items.len(), 1);
 
-        // アイテムが関数であることを確認
+        // item should be function
         if let syn::Item::Fn(func) = &file.items[0] {
             assert_eq!(func.sig.ident.to_string(), "add");
-            assert_eq!(func.sig.inputs.len(), 2); // 2つのパラメータがあるはず
+            assert_eq!(func.sig.inputs.len(), 2); // should be 2 parameters
 
-            // 戻り値の型を確認
+            // return type should be i32
             if let syn::ReturnType::Type(_, return_type) = &func.sig.output {
                 if let syn::Type::Path(type_path) = &**return_type {
                     let path_segment = &type_path.path.segments[0];
@@ -119,14 +110,13 @@ mod tests {
                 panic!("Function has no return type");
             }
 
-            // 関数の本体に1つのステートメントがあることを確認（a + b）
+            // should be 1 statement
             assert_eq!(func.block.stmts.len(), 1);
         } else {
             panic!("Item is not a function");
         }
     }
 
-    // 構造体をパースするテスト
     #[test]
     fn test_parse_struct() {
         let source = r#"
@@ -138,20 +128,20 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
 
-        // ファイルにはアイテムが1つ（構造体定義）含まれているはず
+        // should be 1 item
         assert_eq!(file.items.len(), 1);
 
-        // アイテムが構造体であることを確認
+        // item should be struct
         if let syn::Item::Struct(struct_item) = &file.items[0] {
             assert_eq!(struct_item.ident.to_string(), "Point");
 
-            // 構造体に2つのフィールドがあることを確認
+            // should be 2 fields
             assert_eq!(struct_item.fields.iter().count(), 2);
 
-            // フィールド名と型を確認
+            // should be 2 fields
             let fields: Vec<_> = struct_item.fields.iter().collect();
 
-            // x フィールド
+            // x field
             assert_eq!(fields[0].ident.as_ref().unwrap().to_string(), "x");
             if let syn::Type::Path(type_path) = &fields[0].ty {
                 let path_segment = &type_path.path.segments[0];
@@ -160,7 +150,7 @@ mod tests {
                 panic!("Field x is not a path type");
             }
 
-            // y フィールド
+            // y field
             assert_eq!(fields[1].ident.as_ref().unwrap().to_string(), "y");
             if let syn::Type::Path(type_path) = &fields[1].ty {
                 let path_segment = &type_path.path.segments[0];
@@ -173,7 +163,6 @@ mod tests {
         }
     }
 
-    // 列挙型をパースするテスト
     #[test]
     fn test_parse_enum() {
         let source = r#"
@@ -187,17 +176,17 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
 
-        // ファイルにはアイテムが1つ（列挙型定義）含まれているはず
+        // should be 1 item
         assert_eq!(file.items.len(), 1);
 
-        // アイテムが列挙型であることを確認
+        // item should be enum
         if let syn::Item::Enum(enum_item) = &file.items[0] {
             assert_eq!(enum_item.ident.to_string(), "Direction");
 
-            // 列挙型に4つのバリアントがあることを確認
+            // should be 4 variants
             assert_eq!(enum_item.variants.len(), 4);
 
-            // バリアント名を確認
+            // should be 4 variants
             let variant_names: Vec<String> = enum_item
                 .variants
                 .iter()
@@ -210,7 +199,6 @@ mod tests {
         }
     }
 
-    // 複雑な式をパースするテスト
     #[test]
     fn test_parse_complex_expression() {
         let source = r#"
@@ -226,22 +214,21 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
 
-        // ファイルにはアイテムが1つ（関数定義）含まれているはず
+        // should be 1 item
         assert_eq!(file.items.len(), 1);
 
-        // アイテムが関数であることを確認
+        // item should be function
         if let syn::Item::Fn(func) = &file.items[0] {
             assert_eq!(func.sig.ident.to_string(), "complex_expr");
 
-            // 関数の本体に2つのステートメントがあることを確認
-            // (変数宣言とif文)
+            // should be 2 statements
             assert_eq!(func.block.stmts.len(), 2);
 
-            // 最初のステートメントが変数宣言であることを確認
+            // first statement should be variable declaration
             if let syn::Stmt::Local(local) = &func.block.stmts[0] {
                 assert!(local.init.is_some());
 
-                // 変数名がresultであることを確認
+                // variable name should be result
                 if let syn::Pat::Ident(pat_ident) = &local.pat {
                     assert_eq!(pat_ident.ident.to_string(), "result");
                 } else {
@@ -251,7 +238,7 @@ mod tests {
                 panic!("First statement is not a variable declaration");
             }
 
-            // 2番目のステートメントがif式であることを確認
+            // second statement should be if expression
             if let syn::Stmt::Expr(expr, _) = &func.block.stmts[1] {
                 if let syn::Expr::If(_) = expr {
                     // OK
@@ -266,7 +253,6 @@ mod tests {
         }
     }
 
-    // 無効なコードのパースをテスト
     #[test]
     fn test_parse_invalid_code() {
         let source = r#"
@@ -279,10 +265,6 @@ mod tests {
         assert!(result.is_err(), "Expected parse error for invalid code");
     }
 
-    // ASTVisitorの機能テスト
-    // 注意: このテストは標準出力をキャプチャできないため、
-    // 実際のプロジェクトでは機能を再設計することを推奨
-    // 複数アイテム（関数、構造体など）をパースするテスト
     #[test]
     fn test_parse_multiple_items() {
         let source = r#"
@@ -299,24 +281,24 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
 
-        // ファイルには3つのアイテムが含まれているはず
+        // should be 3 items
         assert_eq!(file.items.len(), 3);
 
-        // 1番目のアイテムが関数であることを確認
+        // first item should be function
         if let syn::Item::Fn(func) = &file.items[0] {
             assert_eq!(func.sig.ident.to_string(), "function1");
         } else {
             panic!("First item is not a function");
         }
 
-        // 2番目のアイテムが構造体であることを確認
+        // second item should be struct
         if let syn::Item::Struct(struct_item) = &file.items[1] {
             assert_eq!(struct_item.ident.to_string(), "MyStruct");
         } else {
             panic!("Second item is not a struct");
         }
 
-        // 3番目のアイテムが関数であることを確認
+        // third item should be function
         if let syn::Item::Fn(func) = &file.items[2] {
             assert_eq!(func.sig.ident.to_string(), "function2");
         } else {

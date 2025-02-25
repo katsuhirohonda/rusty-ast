@@ -29,7 +29,6 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
         println!("{}Function: {}", self.print_indent(), node.sig.ident);
         self.indent += 2;
 
-        // 関数の引数を表示
         if !node.sig.inputs.is_empty() {
             println!("{}Parameters:", self.print_indent());
             self.indent += 2;
@@ -57,7 +56,6 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
             self.indent -= 2;
         }
 
-        // 関数の戻り値型を表示
         if let syn::ReturnType::Type(_, return_type) = &node.sig.output {
             println!(
                 "{}Return type: {}",
@@ -66,7 +64,6 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
             );
         }
 
-        // 関数本体を訪問
         println!("{}Body:", self.print_indent());
         self.indent += 2;
         for stmt in &node.block.stmts {
@@ -247,7 +244,6 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
                     println!("{}Name: {}", self.print_indent(), pat_ident.ident);
                 }
 
-                // LocalInit構造体の変更に対応
                 if let Some(init) = &local.init {
                     println!("{}Initializer:", self.print_indent());
                     self.indent += 2;
@@ -255,14 +251,14 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
                     self.indent -= 2;
                 }
             }
-            // Exprバリアントが変更されている - 2つのフィールドを持つようになった
+
             syn::Stmt::Expr(expr, _) => {
                 println!("{}Expression statement:", self.print_indent());
                 self.indent += 2;
                 self.visit_expr(expr);
                 self.indent -= 2;
             }
-            // Semiバリアントが削除されたため、この分岐は不要
+
             syn::Stmt::Item(item) => match item {
                 syn::Item::Fn(item_fn) => {
                     self.visit_item_fn(item_fn);
@@ -310,7 +306,7 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
                     );
                 }
             },
-            // 新しい分岐を追加（必要に応じて）
+            // TODO: add other statement
             _ => {
                 println!(
                     "{}Other statement: {}",
