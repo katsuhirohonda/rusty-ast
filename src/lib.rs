@@ -4,3 +4,6 @@
 
 mod parser;
 mod visitor;
+
+pub use parser::{parse_rust_source, print_ast};
+pub use visitor::AstVisitor;

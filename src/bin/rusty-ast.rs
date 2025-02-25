@@ -3,7 +3,7 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{ArgGroup, Parser};
-use rusty_ast::{AstVisitor, parse_rust_file, parse_rust_source};
+use rusty_ast::{AstVisitor, parse_rust_source};
 
 /// Rust コードを解析して AST（抽象構文木）を表示するツール
 #[derive(Parser)]
