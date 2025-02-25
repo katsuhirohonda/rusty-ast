@@ -1,6 +1,5 @@
 use quote::ToTokens;
 
-// ASTノードを訪問するためのビジターパターン実装
 pub struct AstVisitor {
     indent: usize,
 }
@@ -15,8 +14,17 @@ impl AstVisitor {
     }
 }
 
+/// implement Visit trait for AstVisitor
+/// Visit trait is defined in syn::visit
 impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
-    // Rustの関数定義を訪問
+    /// visit_item_fn is defined in syn::visit::Visit
+    /// visit_item_fn is called when a Rust function definition is visited
+    ///
+    /// # Arguments
+    /// * `node`: &'ast syn::ItemFn
+    ///
+    /// # Returns
+    /// * `()`
     fn visit_item_fn(&mut self, node: &'ast syn::ItemFn) {
         println!("{}Function: {}", self.print_indent(), node.sig.ident);
         self.indent += 2;
@@ -67,7 +75,14 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
         self.indent -= 4;
     }
 
-    // 式を訪問
+    /// visit_expr is defined in syn::visit::Visit
+    /// visit_expr is called when a Rust expression is visited
+    ///
+    /// # Arguments
+    /// * `node`: &'ast syn::Expr
+    ///
+    /// # Returns
+    /// * `()`
     fn visit_expr(&mut self, node: &'ast syn::Expr) {
         match node {
             syn::Expr::Lit(expr_lit) => match &expr_lit.lit {
@@ -216,7 +231,14 @@ impl<'ast> syn::visit::Visit<'ast> for AstVisitor {
         }
     }
 
-    // 文を訪問 - syn::Stmtの定義が変更されたため、パターンマッチングを修正
+    /// visit_stmt is defined in syn::visit::Visit
+    /// visit_stmt is called when a Rust statement is visited
+    ///
+    /// # Arguments
+    /// * `node`: &'ast syn::Stmt
+    ///
+    /// # Returns
+    /// * `()`
     fn visit_stmt(&mut self, node: &'ast syn::Stmt) {
         match node {
             syn::Stmt::Local(local) => {
