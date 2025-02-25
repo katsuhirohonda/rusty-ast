@@ -39,8 +39,9 @@ fn main() -> io::Result<()> {
     let cli = Cli::parse();
 
     // ファイルまたはコード文字列からASTを解析
-    let ast = if let Some(file_path) = cli.file {
-        parse_rust_file(file_path)?
+    let _ast = if let Some(_file_path) = cli.file {
+        // parse_rust_file(file_path)?
+        todo!()
     } else if let Some(code) = cli.code {
         parse_rust_source(&code).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?
     } else {
@@ -51,8 +52,9 @@ fn main() -> io::Result<()> {
     match cli.format {
         OutputFormat::Text => {
             println!("AST for Rust code:");
-            let mut visitor = AstVisitor::new();
-            visitor.visit_file(&ast);
+            //let mut visitor = AstVisitor::new();
+            // visitor.visit_file(&ast);
+            todo!()
         }
         OutputFormat::Json => {
             // 注意: 実際にはJSONシリアライズの実装が必要
