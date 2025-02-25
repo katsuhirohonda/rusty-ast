@@ -2,12 +2,27 @@ use syn::{File, visit::Visit};
 
 use crate::visitor::AstVisitor;
 
-// Rustのソースコード文字列からASTに変換
+/// parse rust source code to ast
+///
+/// # Arguments
+/// * `source`: &str - rust source code
+///
+/// # Returns
+/// * `Result<syn::File, syn::Error>` - ast
+///
+/// # Errors
+/// * `syn::Error` - parse error
 pub fn parse_rust_source(source: &str) -> Result<syn::File, syn::Error> {
     syn::parse_file(source)
 }
 
-// AST表示の例
+/// print ast
+///
+/// # Arguments
+/// * `file`: &File - ast
+///
+/// # Returns
+/// * `()`
 pub fn print_ast(file: &File) {
     println!("AST for Rust code:");
     let mut visitor = AstVisitor::new();
