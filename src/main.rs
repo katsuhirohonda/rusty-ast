@@ -1,6 +1,4 @@
-use std::fs;
 use std::io;
-use std::path::Path;
 
 use quote::ToTokens;
 use syn::{File, visit::Visit};
