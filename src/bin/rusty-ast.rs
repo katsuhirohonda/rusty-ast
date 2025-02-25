@@ -19,7 +19,7 @@ struct Cli {
     code: Option<String>,
 
     /// 出力形式（text または json）
-    #[arg(short, long, value_enum, default_value = "text")]
+    #[arg(short = 'o', long, value_enum, default_value = "text")]
     format: OutputFormat,
 
     /// インデントに使用するスペースの数
