@@ -1,3 +1,7 @@
+use std::fs;
+use std::io;
+use std::path::Path;
+
 use syn::{File, visit::Visit};
 
 use crate::visitor::AstVisitor;
@@ -16,6 +20,28 @@ pub fn parse_rust_source(source: &str) -> Result<syn::File, syn::Error> {
     syn::parse_file(source)
 }
 
+/// Parse Rust source code from a file into an AST
+///
+/// # Arguments
+/// * `path`: impl AsRef<Path> - path to the rust source file
+///
+/// # Returns
+/// * `io::Result<syn::File>` - ast
+///
+/// # Errors
+/// * `io::Error` - file read error
+/// * `syn::Error` - parse error (wrapped in io::Error)
+pub fn parse_rust_file<P: AsRef<Path>>(path: P) -> io::Result<syn::File> {
+    // ファイルからコードを読み込む
+    let source = fs::read_to_string(path)?;
+
+    // ソースコードをパースしてASTを生成
+    let syntax =
+        syn::parse_file(&source).map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))?;
+
+    Ok(syntax)
+}
+
 /// print ast
 ///
 /// # Arguments
@@ -32,6 +58,34 @@ pub fn print_ast(file: &File) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_parse_rust_file() {
+        // 一時ファイルを作成
+        let mut file = NamedTempFile::new().unwrap();
+        let test_code = r#"
+            fn test_function() {
+                println!("Hello, world!");
+            }
+        "#;
+
+        // ファイルにコードを書き込む
+        file.write_all(test_code.as_bytes()).unwrap();
+        file.flush().unwrap();
+
+        // ファイルからパース
+        let ast = parse_rust_file(file.path()).unwrap();
+
+        // 基本的な検証
+        assert_eq!(ast.items.len(), 1);
+        if let syn::Item::Fn(func) = &ast.items[0] {
+            assert_eq!(func.sig.ident.to_string(), "test_function");
+        } else {
+            panic!("Parsed item is not a function");
+        }
+    }
 
     // 標準出力の取得を補助するための構造体
     // 基本的な関数をパースしてASTが正しく構築されるかテスト
