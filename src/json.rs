@@ -387,22 +387,17 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        // visit_file ではなく process_file を使用
         visitor.process_file(&file);
-
-        // デバッグ用の出力を追加
-        eprintln!("関数テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
         eprintln!("関数テスト - JSON出力: {}", json);
 
-        // Basic validation - should contain function name
+        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Function\""));
         assert!(json.contains("\"name\":\"add\""));
-        // Should contain parameter information
         assert!(json.contains("\"parameters\":["));
-        // Should contain return type
         assert!(json.contains("\"return_type\":\"i32\""));
-        // Should have binary expression in body
         assert!(json.contains("\"operator\":\"+\""));
     }
 
@@ -417,16 +412,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        // visit_file ではなく process_file を使用
         visitor.process_file(&file);
-
-        // デバッグ用の出力を追加
-        eprintln!("構造体テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
         eprintln!("構造体テスト - JSON出力: {}", json);
 
-        // Basic validation
+        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Struct\""));
         assert!(json.contains("\"name\":\"Point\""));
         assert!(json.contains("\"fields\":["));
         assert!(json.contains("\"name\":\"x\""));
@@ -446,16 +439,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        // visit_file ではなく process_file を使用
         visitor.process_file(&file);
-
-        // デバッグ用の出力を追加
-        eprintln!("列挙型テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
         eprintln!("列挙型テスト - JSON出力: {}", json);
 
-        // Basic validation
+        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Enum\""));
         assert!(json.contains("\"name\":\"Direction\""));
         assert!(json.contains("\"variants\":["));
         assert!(json.contains("\"name\":\"North\""));
@@ -479,16 +470,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        // visit_file ではなく process_file を使用
         visitor.process_file(&file);
-
-        // デバッグ用の出力を追加
-        eprintln!("複雑な式テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
         eprintln!("複雑な式テスト - JSON出力: {}", json);
 
-        // Basic validation for complex expressions
+        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Function\""));
         assert!(json.contains("\"name\":\"complex_expr\""));
         assert!(json.contains("\"type\":\"VariableDeclaration\""));
         assert!(json.contains("\"name\":\"result\""));
@@ -520,11 +509,10 @@ mod tests {
 
         // 検証 - 項目が空でないこと
         assert!(!visitor.ast.items.is_empty(), "AST項目が空です！");
-        // 関数名が含まれていること
-        assert!(
-            json.contains("\"name\":\"test_func\""),
-            "関数名がJSONに含まれていません"
-        );
+        // 正しい検証 - 構造に合わせて items 配列内の要素をチェック
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Function\""));
+        assert!(json.contains("\"name\":\"test_func\""));
     }
 
     // 基本的なシリアライズのテスト
@@ -545,10 +533,9 @@ mod tests {
         let json = serde_json::to_string_pretty(&ast).unwrap();
         eprintln!("手動作成したJSONシリアライズ: {}", json);
 
-        // 検証 - 関数名が含まれていること
-        assert!(
-            json.contains("\"name\":\"manual_func\""),
-            "手動作成したJSONに関数名が含まれていません"
-        );
+        // 正しい検証 - 構造に合わせて items 配列内の要素をチェック
+        assert!(json.contains("\"items\":["));
+        assert!(json.contains("\"type\":\"Function\""));
+        assert!(json.contains("\"name\":\"manual_func\""));
     }
 }
