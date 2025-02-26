@@ -123,89 +123,124 @@ impl JsonVisitor {
     }
 
     pub fn to_json(&self) -> String {
-        serde_json::to_string_pretty(&self.ast).unwrap_or_else(|_| String::from("{}"))
+        // デバッグ情報を追加
+        eprintln!("AST項目数: {}", self.ast.items.len());
+
+        if let Some(first_item) = self.ast.items.first() {
+            eprintln!("最初の項目の型: {:?}", first_item);
+        }
+
+        // JSONシリアライズを試みる
+        match serde_json::to_string_pretty(&self.ast) {
+            Ok(json) => {
+                // JSON出力の一部をデバッグとして表示
+                if !json.is_empty() && json.len() > 10 {
+                    let preview_len = std::cmp::min(json.len(), 100);
+                    eprintln!("JSON出力プレビュー: {}...", &json[0..preview_len]);
+                }
+                json
+            }
+            Err(e) => {
+                eprintln!("JSONシリアライズエラー: {}", e);
+                String::from("{}")
+            }
+        }
+    }
+
+    // ファイル処理の専用メソッド
+    pub fn process_file(&mut self, file: &File) {
+        // ファイル内の各項目を処理
+        for item in &file.items {
+            self.process_item(item);
+        }
+    }
+
+    // 項目を処理する専用メソッド
+    fn process_item(&mut self, item: &Item) {
+        match item {
+            Item::Fn(item_fn) => {
+                let mut parameters = Vec::new();
+                for param in &item_fn.sig.inputs {
+                    match param {
+                        syn::FnArg::Typed(pat_type) => {
+                            if let Pat::Ident(pat_ident) = &*pat_type.pat {
+                                parameters.push(ParameterJson {
+                                    name: pat_ident.ident.to_string(),
+                                    type_info: format!("{}", (*pat_type.ty).to_token_stream()),
+                                });
+                            }
+                        }
+                        syn::FnArg::Receiver(receiver) => {
+                            parameters.push(ParameterJson {
+                                name: "self".to_string(),
+                                type_info: format!("{}", receiver.to_token_stream()),
+                            });
+                        }
+                    }
+                }
+
+                let return_type = match &item_fn.sig.output {
+                    syn::ReturnType::Default => None,
+                    syn::ReturnType::Type(_, return_type) => {
+                        Some(format!("{}", return_type.to_token_stream()))
+                    }
+                };
+
+                let mut statements = Vec::new();
+                for stmt in &item_fn.block.stmts {
+                    statements.push(self.visit_stmt_json(stmt));
+                }
+
+                self.ast.items.push(ItemJson::Function {
+                    name: item_fn.sig.ident.to_string(),
+                    parameters,
+                    return_type,
+                    body: statements,
+                });
+            }
+            Item::Struct(item_struct) => {
+                let mut fields = Vec::new();
+                for field in &item_struct.fields {
+                    fields.push(FieldJson {
+                        name: field.ident.as_ref().map(|ident| ident.to_string()),
+                        type_info: format!("{}", field.ty.to_token_stream()),
+                    });
+                }
+
+                self.ast.items.push(ItemJson::Struct {
+                    name: item_struct.ident.to_string(),
+                    fields,
+                });
+            }
+            Item::Enum(item_enum) => {
+                let mut variants = Vec::new();
+                for variant in &item_enum.variants {
+                    variants.push(VariantJson {
+                        name: variant.ident.to_string(),
+                    });
+                }
+
+                self.ast.items.push(ItemJson::Enum {
+                    name: item_enum.ident.to_string(),
+                    variants,
+                });
+            }
+            _ => {
+                self.ast.items.push(ItemJson::Other {
+                    description: format!("{}", item.to_token_stream()),
+                });
+            }
+        }
     }
 }
 
 impl<'ast> Visit<'ast> for JsonVisitor {
     fn visit_file(&mut self, file: &'ast File) {
-        // Visit all items in the file
-        for item in &file.items {
-            match item {
-                Item::Fn(item_fn) => {
-                    let mut parameters = Vec::new();
-                    for param in &item_fn.sig.inputs {
-                        match param {
-                            syn::FnArg::Typed(pat_type) => {
-                                if let Pat::Ident(pat_ident) = &*pat_type.pat {
-                                    parameters.push(ParameterJson {
-                                        name: pat_ident.ident.to_string(),
-                                        type_info: format!("{}", (*pat_type.ty).to_token_stream()),
-                                    });
-                                }
-                            }
-                            syn::FnArg::Receiver(receiver) => {
-                                parameters.push(ParameterJson {
-                                    name: "self".to_string(),
-                                    type_info: format!("{}", receiver.to_token_stream()),
-                                });
-                            }
-                        }
-                    }
+        // Visit トレイトの実装を変更
+        // 専用の process_file メソッドを使用してファイルを処理
+        self.process_file(file);
 
-                    let return_type = match &item_fn.sig.output {
-                        syn::ReturnType::Default => None,
-                        syn::ReturnType::Type(_, return_type) => {
-                            Some(format!("{}", return_type.to_token_stream()))
-                        }
-                    };
-
-                    let mut statements = Vec::new();
-                    for stmt in &item_fn.block.stmts {
-                        statements.push(self.visit_stmt_json(stmt));
-                    }
-
-                    self.ast.items.push(ItemJson::Function {
-                        name: item_fn.sig.ident.to_string(),
-                        parameters,
-                        return_type,
-                        body: statements,
-                    });
-                }
-                Item::Struct(item_struct) => {
-                    let mut fields = Vec::new();
-                    for field in &item_struct.fields {
-                        fields.push(FieldJson {
-                            name: field.ident.as_ref().map(|ident| ident.to_string()),
-                            type_info: format!("{}", field.ty.to_token_stream()),
-                        });
-                    }
-
-                    self.ast.items.push(ItemJson::Struct {
-                        name: item_struct.ident.to_string(),
-                        fields,
-                    });
-                }
-                Item::Enum(item_enum) => {
-                    let mut variants = Vec::new();
-                    for variant in &item_enum.variants {
-                        variants.push(VariantJson {
-                            name: variant.ident.to_string(),
-                        });
-                    }
-
-                    self.ast.items.push(ItemJson::Enum {
-                        name: item_enum.ident.to_string(),
-                        variants,
-                    });
-                }
-                _ => {
-                    self.ast.items.push(ItemJson::Other {
-                        description: format!("{}", item.to_token_stream()),
-                    });
-                }
-            }
-        }
+        // 親の visit_file は呼び出さない - すでに全ての項目を処理しているため
     }
 }
 
@@ -352,9 +387,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        visitor.visit_file(&file);
+        // visit_file ではなく process_file を使用
+        visitor.process_file(&file);
+
+        // デバッグ用の出力を追加
+        eprintln!("関数テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
+        eprintln!("関数テスト - JSON出力: {}", json);
 
         // Basic validation - should contain function name
         assert!(json.contains("\"name\":\"add\""));
@@ -377,9 +417,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        visitor.visit_file(&file);
+        // visit_file ではなく process_file を使用
+        visitor.process_file(&file);
+
+        // デバッグ用の出力を追加
+        eprintln!("構造体テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
+        eprintln!("構造体テスト - JSON出力: {}", json);
 
         // Basic validation
         assert!(json.contains("\"name\":\"Point\""));
@@ -401,9 +446,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        visitor.visit_file(&file);
+        // visit_file ではなく process_file を使用
+        visitor.process_file(&file);
+
+        // デバッグ用の出力を追加
+        eprintln!("列挙型テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
+        eprintln!("列挙型テスト - JSON出力: {}", json);
 
         // Basic validation
         assert!(json.contains("\"name\":\"Direction\""));
@@ -429,9 +479,14 @@ mod tests {
 
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
-        visitor.visit_file(&file);
+        // visit_file ではなく process_file を使用
+        visitor.process_file(&file);
+
+        // デバッグ用の出力を追加
+        eprintln!("複雑な式テスト - AST項目数: {}", visitor.ast.items.len());
 
         let json = visitor.to_json();
+        eprintln!("複雑な式テスト - JSON出力: {}", json);
 
         // Basic validation for complex expressions
         assert!(json.contains("\"name\":\"complex_expr\""));
@@ -439,5 +494,61 @@ mod tests {
         assert!(json.contains("\"name\":\"result\""));
         assert!(json.contains("\"type\":\"If\""));
         assert!(json.contains("\"operator\":\">\""));
+    }
+
+    // 追加のデバッグテスト
+    #[test]
+    fn test_debug_json_output() {
+        // 簡単なソースコード
+        let source = r#"
+            fn test_func() {
+                println!("Hello");
+            }
+        "#;
+
+        // パースと訪問処理
+        let file = parse_rust_source(source).unwrap();
+        let mut visitor = JsonVisitor::new();
+        visitor.process_file(&file);
+
+        // AST構造を詳細に出力
+        eprintln!("AST構造: {:#?}", visitor.ast);
+
+        // JSON化
+        let json = visitor.to_json();
+        eprintln!("JSON出力: {}", json);
+
+        // 検証 - 項目が空でないこと
+        assert!(!visitor.ast.items.is_empty(), "AST項目が空です！");
+        // 関数名が含まれていること
+        assert!(
+            json.contains("\"name\":\"test_func\""),
+            "関数名がJSONに含まれていません"
+        );
+    }
+
+    // 基本的なシリアライズのテスト
+    #[test]
+    fn test_basic_serialization() {
+        // 手動でAstJson構造を作成
+        let mut ast = AstJson::default();
+
+        // 関数アイテムを追加
+        ast.items.push(ItemJson::Function {
+            name: "manual_func".to_string(),
+            parameters: vec![],
+            return_type: Some("i32".to_string()),
+            body: vec![],
+        });
+
+        // JSONシリアライズ
+        let json = serde_json::to_string_pretty(&ast).unwrap();
+        eprintln!("手動作成したJSONシリアライズ: {}", json);
+
+        // 検証 - 関数名が含まれていること
+        assert!(
+            json.contains("\"name\":\"manual_func\""),
+            "手動作成したJSONに関数名が含まれていません"
+        );
     }
 }
