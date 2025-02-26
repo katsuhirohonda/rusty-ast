@@ -2,7 +2,7 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{ArgGroup, Parser};
-use rusty_ast::{AstVisitor, JsonVisitor, parse_rust_file, parse_rust_source};
+use rusty_ast::{JsonVisitor, TextVisitor, parse_rust_file, parse_rust_source};
 use syn::visit::Visit;
 
 /// Tool for parsing Rust code and displaying its AST
@@ -57,7 +57,7 @@ fn main() -> io::Result<()> {
     match cli.format {
         OutputFormat::Text => {
             println!("AST for Rust code:");
-            let mut visitor = AstVisitor::new();
+            let mut visitor = TextVisitor::new();
             visitor.visit_file(&ast);
         }
         OutputFormat::Json => {
