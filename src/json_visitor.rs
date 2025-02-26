@@ -144,6 +144,12 @@ pub struct JsonVisitor {
 /// * `to_json()`: converts the AST to a JSON string
 /// * `process_file()`: processes a file and adds its items to the AST
 /// * `process_item()`: processes an item and adds it to the AST
+impl Default for JsonVisitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl JsonVisitor {
     /// new
     ///
@@ -307,11 +313,7 @@ impl JsonVisitor {
                     "unknown".to_string()
                 };
 
-                let initializer = if let Some(init) = &local.init {
-                    Some(Box::new(self.visit_expr_json(&init.expr)))
-                } else {
-                    None
-                };
+                let initializer = local.init.as_ref().map(|init| Box::new(self.visit_expr_json(&init.expr)));
 
                 StmtJson::VariableDeclaration { name, initializer }
             }

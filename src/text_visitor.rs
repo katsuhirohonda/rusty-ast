@@ -16,6 +16,12 @@ pub struct TextVisitor {
 /// # Methods
 /// * `new()`: creates a new TextVisitor
 /// * `print_indent()`: prints the current indentation level
+impl Default for TextVisitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TextVisitor {
     /// new
     ///
@@ -209,7 +215,7 @@ impl<'ast> syn::visit::Visit<'ast> for TextVisitor {
                 if let Some((_, else_branch)) = &expr_if.else_branch {
                     println!("{}Else branch:", self.print_indent());
                     self.indent += 2;
-                    self.visit_expr(&else_branch);
+                    self.visit_expr(else_branch);
                     self.indent -= 2;
                 }
             }
