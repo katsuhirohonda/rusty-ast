@@ -5,15 +5,36 @@ use std::path::Path;
 
 use syn::{File, visit::Visit};
 
+/// TextVisitor is a visitor that prints the AST in a text format
+///
+/// # Fields
+/// * `indent`: usize - the current indentation level
 pub struct TextVisitor {
     indent: usize,
 }
 
+/// # Methods
+/// * `new()`: creates a new TextVisitor
+/// * `print_indent()`: prints the current indentation level
 impl TextVisitor {
+    /// new
+    ///
+    /// # Arguments
+    /// * `()`
+    ///
+    /// # Returns
+    /// * `TextVisitor` - a new TextVisitor
     pub fn new() -> Self {
         TextVisitor { indent: 0 }
     }
 
+    /// print_indent
+    ///
+    /// # Arguments
+    /// * `self`: &Self - the TextVisitor
+    ///
+    /// # Returns
+    /// * `String` - the current indentation level
     fn print_indent(&self) -> String {
         " ".repeat(self.indent)
     }

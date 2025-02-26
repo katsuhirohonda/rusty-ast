@@ -3,12 +3,20 @@ use serde::Serialize;
 use syn::{Expr, File, Item, Lit, Pat, Stmt, visit::Visit};
 
 /// A serializable representation of a Rust AST for JSON output
+///
+/// # Fields
+/// * `items`: Vec<ItemJson> - the items in the AST
 #[derive(Serialize, Debug, Default)]
 pub struct AstJson {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ItemJson>,
 }
 
+/// # Fields
+/// * `name`: String - the name of the item
+/// * `parameters`: Vec<ParameterJson> - the parameters of the item
+/// * `return_type`: Option<String> - the return type of the item
+/// * `body`: Vec<StmtJson> - the body of the item
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum ItemJson {
@@ -31,23 +39,34 @@ pub enum ItemJson {
     },
 }
 
+/// # Fields
+/// * `name`: String - the name of the parameter
+/// * `type_info`: String - the type of the parameter
 #[derive(Serialize, Debug)]
 pub struct ParameterJson {
     pub name: String,
     pub type_info: String,
 }
 
+/// # Fields
+/// * `name`: Option<String> - the name of the field
+/// * `type_info`: String - the type of the field
 #[derive(Serialize, Debug)]
 pub struct FieldJson {
     pub name: Option<String>,
     pub type_info: String,
 }
 
+/// # Fields
+/// * `name`: String - the name of the variant
 #[derive(Serialize, Debug)]
 pub struct VariantJson {
     pub name: String,
 }
 
+/// # Fields
+/// * `name`: String - the name of the statement
+/// * `initializer`: Option<Box<ExprJson>> - the initializer of the statement
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum StmtJson {
@@ -63,6 +82,8 @@ pub enum StmtJson {
     },
 }
 
+/// # Fields
+/// * `value`: String - the value of the literal
 #[derive(Serialize, Debug)]
 #[serde(tag = "type")]
 pub enum ExprJson {
@@ -111,51 +132,68 @@ pub enum ExprJson {
 }
 
 /// A visitor that builds a JSON representation of a Rust AST
+///
+/// # Fields
+/// * `ast`: AstJson - the AST to be converted to JSON
 pub struct JsonVisitor {
     pub ast: AstJson,
 }
 
+/// # Methods
+/// * `new()`: creates a new JsonVisitor
+/// * `to_json()`: converts the AST to a JSON string
+/// * `process_file()`: processes a file and adds its items to the AST
+/// * `process_item()`: processes an item and adds it to the AST
 impl JsonVisitor {
+    /// new
+    ///
+    /// # Arguments
+    /// * `()`
+    ///
+    /// # Returns
+    /// * `JsonVisitor` - a new JsonVisitor
     pub fn new() -> Self {
         JsonVisitor {
             ast: AstJson::default(),
         }
     }
 
+    /// to_json
+    ///
+    /// # Arguments
+    /// * `self`: &Self - the JsonVisitor
+    ///
+    /// # Returns
+    /// * `String` - the JSON string
     pub fn to_json(&self) -> String {
-        // デバッグ情報を追加
-        eprintln!("AST項目数: {}", self.ast.items.len());
-
-        if let Some(first_item) = self.ast.items.first() {
-            eprintln!("最初の項目の型: {:?}", first_item);
-        }
-
-        // JSONシリアライズを試みる
         match serde_json::to_string_pretty(&self.ast) {
-            Ok(json) => {
-                // JSON出力の一部をデバッグとして表示
-                if !json.is_empty() && json.len() > 10 {
-                    let preview_len = std::cmp::min(json.len(), 100);
-                    eprintln!("JSON出力プレビュー: {}...", &json[0..preview_len]);
-                }
-                json
-            }
-            Err(e) => {
-                eprintln!("JSONシリアライズエラー: {}", e);
-                String::from("{}")
-            }
+            Ok(json) => json,
+            Err(_) => String::from("{}"),
         }
     }
 
-    // ファイル処理の専用メソッド
+    /// process_file
+    ///
+    /// # Arguments
+    /// * `self`: &mut Self - the JsonVisitor
+    /// * `file`: &File - the file to process
+    ///
+    /// # Returns
+    /// * `()`
     pub fn process_file(&mut self, file: &File) {
-        // ファイル内の各項目を処理
         for item in &file.items {
             self.process_item(item);
         }
     }
 
-    // 項目を処理する専用メソッド
+    /// process_item
+    ///
+    /// # Arguments
+    /// * `self`: &mut Self - the JsonVisitor
+    /// * `item`: &Item - the item to process
+    ///
+    /// # Returns
+    /// * `()`
     fn process_item(&mut self, item: &Item) {
         match item {
             Item::Fn(item_fn) => {
@@ -234,17 +272,32 @@ impl JsonVisitor {
     }
 }
 
+/// # Implementations
+/// * `Visit<'ast>` - the Visit trait
 impl<'ast> Visit<'ast> for JsonVisitor {
+    /// visit_file
+    ///
+    /// # Arguments
+    /// * `self`: &mut Self - the JsonVisitor
+    /// * `file`: &File - the file to process
+    ///
+    /// # Returns
+    /// * `()`
     fn visit_file(&mut self, file: &'ast File) {
-        // Visit トレイトの実装を変更
-        // 専用の process_file メソッドを使用してファイルを処理
         self.process_file(file);
-
-        // 親の visit_file は呼び出さない - すでに全ての項目を処理しているため
     }
 }
 
+/// # Implementations
+/// * `Visit<'ast>` - the Visit trait
 impl JsonVisitor {
+    /// visit_stmt_json
+    ///
+    /// # Arguments
+    /// * `self`: &mut Self - the JsonVisitor
+    /// * `stmt`: &Stmt - the statement to process
+    ///
+    /// # Returns
     fn visit_stmt_json(&mut self, stmt: &Stmt) -> StmtJson {
         match stmt {
             Stmt::Local(local) => {
@@ -271,6 +324,14 @@ impl JsonVisitor {
         }
     }
 
+    /// visit_expr_json
+    ///
+    /// # Arguments
+    /// * `self`: &mut Self - the JsonVisitor
+    /// * `expr`: &Expr - the expression to process
+    ///
+    /// # Returns
+    /// * `ExprJson` - the JSON representation of the expression
     fn visit_expr_json(&mut self, expr: &Expr) -> ExprJson {
         match expr {
             Expr::Lit(expr_lit) => match &expr_lit.lit {
@@ -391,7 +452,6 @@ mod tests {
         visitor.process_file(&file);
 
         let json = visitor.to_json();
-        eprintln!("関数テスト - JSON出力: {}", json);
 
         // JSONをパースして構造を確認
         let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
@@ -429,7 +489,6 @@ mod tests {
         visitor.process_file(&file);
 
         let json = visitor.to_json();
-        eprintln!("構造体テスト - JSON出力: {}", json);
 
         // JSONをパースして構造を確認
         let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
@@ -466,7 +525,6 @@ mod tests {
         visitor.process_file(&file);
 
         let json = visitor.to_json();
-        eprintln!("列挙型テスト - JSON出力: {}", json);
 
         // JSONをパースして構造を確認
         let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
@@ -507,7 +565,6 @@ mod tests {
         visitor.process_file(&file);
 
         let json = visitor.to_json();
-        eprintln!("複雑な式テスト - JSON出力: {}", json);
 
         // JSONをパースして構造を確認
         let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
@@ -545,12 +602,8 @@ mod tests {
         let mut visitor = JsonVisitor::new();
         visitor.process_file(&file);
 
-        // AST構造を詳細に出力
-        eprintln!("AST構造: {:#?}", visitor.ast);
-
         // JSON化
         let json = visitor.to_json();
-        eprintln!("JSON出力: {}", json);
 
         // 検証 - 項目が空でないこと
         assert!(!visitor.ast.items.is_empty(), "AST項目が空です！");
@@ -585,7 +638,6 @@ mod tests {
 
         // JSONシリアライズ
         let json = serde_json::to_string_pretty(&ast).unwrap();
-        eprintln!("手動作成したJSONシリアライズ: {}", json);
 
         // JSONをパースして構造を確認
         let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
