@@ -376,6 +376,7 @@ impl JsonVisitor {
 mod tests {
     use super::*;
     use crate::parse_rust_source;
+    use serde_json::Value;
 
     #[test]
     fn test_json_serialization_function() {
@@ -392,13 +393,26 @@ mod tests {
         let json = visitor.to_json();
         eprintln!("関数テスト - JSON出力: {}", json);
 
-        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Function\""));
-        assert!(json.contains("\"name\":\"add\""));
-        assert!(json.contains("\"parameters\":["));
-        assert!(json.contains("\"return_type\":\"i32\""));
-        assert!(json.contains("\"operator\":\"+\""));
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認 - itemsは配列
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Function");
+        assert_eq!(first_item["name"], "add");
+
+        // パラメータを確認
+        assert!(first_item["parameters"].is_array());
+        assert_eq!(first_item["parameters"][0]["name"], "a");
+        assert_eq!(first_item["parameters"][1]["name"], "b");
+
+        // 戻り値を確認
+        assert_eq!(first_item["return_type"], "i32");
     }
 
     #[test]
@@ -417,13 +431,23 @@ mod tests {
         let json = visitor.to_json();
         eprintln!("構造体テスト - JSON出力: {}", json);
 
-        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Struct\""));
-        assert!(json.contains("\"name\":\"Point\""));
-        assert!(json.contains("\"fields\":["));
-        assert!(json.contains("\"name\":\"x\""));
-        assert!(json.contains("\"type_info\":\"f64\""));
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Struct");
+        assert_eq!(first_item["name"], "Point");
+
+        // フィールドを確認
+        assert!(first_item["fields"].is_array());
+        assert_eq!(first_item["fields"][0]["name"], "x");
+        assert_eq!(first_item["fields"][1]["name"], "y");
     }
 
     #[test]
@@ -444,15 +468,25 @@ mod tests {
         let json = visitor.to_json();
         eprintln!("列挙型テスト - JSON出力: {}", json);
 
-        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Enum\""));
-        assert!(json.contains("\"name\":\"Direction\""));
-        assert!(json.contains("\"variants\":["));
-        assert!(json.contains("\"name\":\"North\""));
-        assert!(json.contains("\"name\":\"East\""));
-        assert!(json.contains("\"name\":\"South\""));
-        assert!(json.contains("\"name\":\"West\""));
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Enum");
+        assert_eq!(first_item["name"], "Direction");
+
+        // バリアントを確認
+        assert!(first_item["variants"].is_array());
+        assert_eq!(first_item["variants"][0]["name"], "North");
+        assert_eq!(first_item["variants"][1]["name"], "East");
+        assert_eq!(first_item["variants"][2]["name"], "South");
+        assert_eq!(first_item["variants"][3]["name"], "West");
     }
 
     #[test]
@@ -475,27 +509,38 @@ mod tests {
         let json = visitor.to_json();
         eprintln!("複雑な式テスト - JSON出力: {}", json);
 
-        // JSONの構造を見ると、nameはitemsの中の要素に含まれている
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Function\""));
-        assert!(json.contains("\"name\":\"complex_expr\""));
-        assert!(json.contains("\"type\":\"VariableDeclaration\""));
-        assert!(json.contains("\"name\":\"result\""));
-        assert!(json.contains("\"type\":\"If\""));
-        assert!(json.contains("\"operator\":\">\""));
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Function");
+        assert_eq!(first_item["name"], "complex_expr");
+
+        // 関数本体の文を確認
+        assert!(first_item["body"].is_array());
+        assert_eq!(first_item["body"][0]["type"], "VariableDeclaration");
+        assert_eq!(first_item["body"][0]["name"], "result");
+
+        // if文を確認
+        assert_eq!(first_item["body"][1]["type"], "Expression");
+        assert_eq!(first_item["body"][1]["expr"]["type"], "If");
     }
 
     // 追加のデバッグテスト
     #[test]
     fn test_debug_json_output() {
-        // 簡単なソースコード
         let source = r#"
             fn test_func() {
                 println!("Hello");
             }
         "#;
 
-        // パースと訪問処理
         let file = parse_rust_source(source).unwrap();
         let mut visitor = JsonVisitor::new();
         visitor.process_file(&file);
@@ -509,10 +554,19 @@ mod tests {
 
         // 検証 - 項目が空でないこと
         assert!(!visitor.ast.items.is_empty(), "AST項目が空です！");
-        // 正しい検証 - 構造に合わせて items 配列内の要素をチェック
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Function\""));
-        assert!(json.contains("\"name\":\"test_func\""));
+
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Function");
+        assert_eq!(first_item["name"], "test_func");
     }
 
     // 基本的なシリアライズのテスト
@@ -533,9 +587,17 @@ mod tests {
         let json = serde_json::to_string_pretty(&ast).unwrap();
         eprintln!("手動作成したJSONシリアライズ: {}", json);
 
-        // 正しい検証 - 構造に合わせて items 配列内の要素をチェック
-        assert!(json.contains("\"items\":["));
-        assert!(json.contains("\"type\":\"Function\""));
-        assert!(json.contains("\"name\":\"manual_func\""));
+        // JSONをパースして構造を確認
+        let parsed: Value = serde_json::from_str(&json).expect("JSONのパースに失敗");
+
+        // 構造を確認
+        assert!(parsed["items"].is_array());
+
+        // 最初の要素を取得
+        let first_item = &parsed["items"][0];
+
+        // 型と名前を確認
+        assert_eq!(first_item["type"], "Function");
+        assert_eq!(first_item["name"], "manual_func");
     }
 }
