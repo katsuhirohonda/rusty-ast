@@ -26,7 +26,7 @@ cargo install rusty-ast
 Or clone and build from this repository:
 
 ```bash
-git clone https://github.com/yourusername/rusty-ast.git
+git clone https://github.com/e-bebe/rusty-ast.git
 cd rusty-ast
 cargo build --release
 ```
@@ -53,15 +53,14 @@ rusty-ast -f path/to/your/file.rs -o json
 
 Add to your `Cargo.toml`:
 
-```toml
-[dependencies]
-rusty-ast = "0.1.0"
+```bash
+cargo add rusty-ast
 ```
 
 Example code:
 
 ```rust
-use rusty_ast::{parse_rust_source, AstVisitor};
+use rusty_ast::{parse_rust_source, TextVisitor};
 use syn::visit::Visit;
 
 fn main() {
@@ -73,7 +72,7 @@ fn main() {
     
     if let Ok(ast) = parse_rust_source(code) {
         // Display AST in text format
-        let mut visitor = AstVisitor::new();
+        let mut visitor = TextVisitor::new();
         visitor.visit_file(&ast);
     }
 }
