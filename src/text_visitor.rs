@@ -95,7 +95,7 @@ impl<'ast> syn::visit::Visit<'ast> for TextVisitor {
         for stmt in &node.block.stmts {
             self.visit_stmt(stmt);
         }
-        self.indent -= 4;
+        self.indent -= 2;
     }
 
     /// visit_expr is defined in syn::visit::Visit
