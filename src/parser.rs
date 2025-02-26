@@ -4,7 +4,7 @@ use std::path::Path;
 
 use syn::{File, visit::Visit};
 
-use crate::visitor::AstVisitor;
+use crate::text_visitor::AstVisitor;
 
 /// parse rust source code to ast
 ///

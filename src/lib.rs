@@ -2,10 +2,10 @@
 //!
 //! This crate provides tools for parsing Rust source code and displaying its abstract syntax tree (AST).
 
+mod json_visitor;
 mod parser;
-mod visitor;
-mod json;
+mod text_visitor;
 
+pub use json_visitor::{AstJson, JsonVisitor};
 pub use parser::{parse_rust_file, parse_rust_source, print_ast};
-pub use visitor::AstVisitor;
-pub use json::{JsonVisitor, AstJson};
+pub use text_visitor::AstVisitor;
