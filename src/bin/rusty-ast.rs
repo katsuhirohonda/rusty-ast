@@ -2,7 +2,7 @@ use std::io;
 use std::path::PathBuf;
 
 use clap::{ArgGroup, Parser};
-use rusty_ast::{AstVisitor, parse_rust_file, parse_rust_source};
+use rusty_ast::{AstVisitor, JsonVisitor, parse_rust_file, parse_rust_source};
 use syn::visit::Visit;
 
 /// Tool for parsing Rust code and displaying its AST
@@ -61,10 +61,9 @@ fn main() -> io::Result<()> {
             visitor.visit_file(&ast);
         }
         OutputFormat::Json => {
-            // note: actually, JSON serialization is required
-            // implement with serde_json or other libraries
-            println!("JSON output is not implemented yet");
-            todo!()
+            let mut visitor = JsonVisitor::new();
+            visitor.visit_file(&ast);
+            println!("{}", visitor.to_json());
         }
     }
 
