@@ -5,6 +5,7 @@ A Rust Abstract Syntax Tree (AST) visualization tool. This tool parses Rust sour
 ## Features
 
 - Generate AST from Rust source code files or strings
+- Process directories recursively to analyze all Rust files
 - Display AST in readable text format
 - JSON output option
 - Support for various Rust syntax elements:
@@ -44,9 +45,27 @@ rusty-ast -f path/to/your/file.rs
 # Parse Rust code directly
 rusty-ast -c "fn main() { println!(\"Hello, world!\"); }"
 
+# Process a directory (non-recursive)
+rusty-ast -d path/to/your/project
+
+# Process a directory recursively
+rusty-ast -d path/to/your/project -r
+
 # Output in JSON format
 rusty-ast -f path/to/your/file.rs -o json
+```
 
+Command line options:
+
+```
+OPTIONS:
+    -c, --code <CODE>                 Rust code to parse (string)
+    -d, --directory <DIRECTORY>       Directory containing Rust files to parse
+    -f, --file <FILE>                 Path to the Rust source file to parse
+    -h, --help                        Print help information
+    -o, --format <FORMAT>             Output format (text or json) [default: text]
+    -r, --recursive                   Recursively process directories (only applies with --directory)
+    -V, --version                     Print version information
 ```
 
 ### As a Library
