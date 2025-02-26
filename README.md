@@ -1,107 +1,90 @@
 # rusty-ast
 
-A tool for parsing Rust code and visualizing its Abstract Syntax Tree (AST).
-
-[![Crates.io](https://img.shields.io/crates/v/rusty-ast.svg)](https://crates.io/crates/rusty-ast)
-[![Documentation](https://docs.rs/rusty-ast/badge.svg)](https://docs.rs/rusty-ast)
-[![License](https://img.shields.io/crates/l/rusty-ast.svg)](LICENSE)
+A Rust Abstract Syntax Tree (AST) visualization tool. This tool parses Rust source code and displays its syntactic structure in text or JSON format.
 
 ## Features
 
-- Parse Rust source files or code strings
-- Visualize the AST structure in text format
-- Display details of functions, structs, enums, and expressions
-- Command-line tool with flexible options
+- Generate AST from Rust source code files or strings
+- Display AST in readable text format
+- JSON output option
+- Support for various Rust syntax elements:
+  - Function definitions
+  - Struct definitions
+  - Enum definitions
+  - Variable declarations
+  - Control flow (if, while, loop)
+  - Expressions (binary operations, function calls, literals, etc.)
 
 ## Installation
 
-```sh
+Install using Cargo:
+
+```bash
 cargo install rusty-ast
+```
+
+Or clone and build from this repository:
+
+```bash
+git clone https://github.com/yourusername/rusty-ast.git
+cd rusty-ast
+cargo build --release
 ```
 
 ## Usage
 
-### CLI Tool
+### Command Line Tool
 
-The `rusty-ast` command line tool can be used to parse and display the AST of Rust code.
+Basic usage:
 
-```sh
-# Parse a Rust file
-rusty-ast --file src/main.rs
+```bash
+# Parse a Rust source file
+rusty-ast -f path/to/your/file.rs
 
-# Parse Rust code from a string
-rusty-ast --code "fn main() { println!(\"Hello, world!\"); }"
+# Parse Rust code directly
+rusty-ast -c "fn main() { println!(\"Hello, world!\"); }"
 
-# Control indentation
-rusty-ast --file src/main.rs --indent 4
+# Output in JSON format
+rusty-ast -f path/to/your/file.rs -o json
 
-# Output in JSON format (coming soon)
-rusty-ast --file src/main.rs --format json
+# Change indentation size (default is 2 spaces)
+rusty-ast -f path/to/your/file.rs -i 4
 ```
 
 ### As a Library
 
+Add to your `Cargo.toml`:
+
+```toml
+[dependencies]
+rusty-ast = "0.1.0"
+```
+
+Example code:
+
 ```rust
-use rusty_ast::{parse_rust_file, parse_rust_source, AstVisitor};
+use rusty_ast::{parse_rust_source, AstVisitor};
 use syn::visit::Visit;
 
-fn main() -> std::io::Result<()> {
-    // Parse from a file
-    let ast = parse_rust_file("src/main.rs")?;
-    
-    // Or parse from a string
+fn main() {
     let code = r#"
         fn add(a: i32, b: i32) -> i32 {
             a + b
         }
     "#;
-    let ast = parse_rust_source(code).unwrap();
     
-    // Visualize the AST
-    let mut visitor = AstVisitor::new();
-    visitor.visit_file(&ast);
-    
-    Ok(())
+    if let Ok(ast) = parse_rust_source(code) {
+        // Display AST in text format
+        let mut visitor = AstVisitor::new();
+        visitor.visit_file(&ast);
+    }
 }
 ```
 
-## AST Structure
-
-The tool displays Rust code structure with detailed information:
-
-- Functions with parameters and return types
-- Structs and their fields
-- Enums and their variants
-- Expressions (binary, function calls, conditionals, etc.)
-- Literals (integers, floats, strings, booleans)
-- Statements (variable declarations, expressions)
-
-## Requirements
-
-- Rust 1.56 or higher
-
-## Dependencies
-
-- syn: For parsing Rust code
-- quote: For converting to token streams
-- clap: For command-line argument parsing
-
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT
 
 ## Contributing
 
-Contributions are welcome! Here are some ways you can contribute:
-
-1. Implement JSON output format
-2. Add more detailed AST visualization
-3. Add support for more Rust language features
-4. Improve documentation and examples
-
-Please feel free to submit issues and pull requests.
-
-## Acknowledgments
-
-- Built on top of the excellent [syn](https://crates.io/crates/syn) crate
-- Inspired by tools like AST Explorer
+Contributions are welcome, including bug reports, feature requests, and pull requests.
