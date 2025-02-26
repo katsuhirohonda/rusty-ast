@@ -1,6 +1,6 @@
-use serde::Serialize;
-use syn::{visit::Visit, File, Item, Expr, Stmt, Pat, Lit};
 use quote::ToTokens;
+use serde::Serialize;
+use syn::{Expr, File, Item, Lit, Pat, Stmt, visit::Visit};
 
 /// A serializable representation of a Rust AST for JSON output
 #[derive(Serialize, Debug, Default)]
@@ -140,7 +140,7 @@ impl<'ast> Visit<'ast> for JsonVisitor {
                                 if let Pat::Ident(pat_ident) = &*pat_type.pat {
                                     parameters.push(ParameterJson {
                                         name: pat_ident.ident.to_string(),
-                                        type_info: format!("{}", pat_type.ty.to_token_stream()),
+                                        type_info: format!("{}", (*pat_type.ty).to_token_stream()),
                                     });
                                 }
                             }
@@ -225,10 +225,7 @@ impl JsonVisitor {
                     None
                 };
 
-                StmtJson::VariableDeclaration {
-                    name,
-                    initializer,
-                }
+                StmtJson::VariableDeclaration { name, initializer }
             }
             Stmt::Expr(expr, _) => StmtJson::Expression {
                 expr: Box::new(self.visit_expr_json(expr)),
@@ -281,7 +278,11 @@ impl JsonVisitor {
             }
             Expr::Call(expr_call) => ExprJson::FunctionCall {
                 function: Box::new(self.visit_expr_json(&expr_call.func)),
-                arguments: expr_call.args.iter().map(|arg| self.visit_expr_json(arg)).collect(),
+                arguments: expr_call
+                    .args
+                    .iter()
+                    .map(|arg| self.visit_expr_json(arg))
+                    .collect(),
             },
             Expr::Path(expr_path) => ExprJson::Identifier {
                 name: format!("{}", expr_path.to_token_stream()),
