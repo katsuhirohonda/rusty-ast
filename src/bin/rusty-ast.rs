@@ -11,7 +11,6 @@ use syn::visit::Visit;
 /// * `file`: &str - path to the rust source file
 /// * `code`: &str - rust source code
 /// * `format`: &str - output format (text or json)
-/// * `indent`: usize - number of spaces to indent
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 #[command(group(ArgGroup::new("input").required(true).args(["file", "code"])))]
@@ -27,10 +26,6 @@ struct Cli {
     /// Output format (text or json)
     #[arg(short = 'o', long, value_enum, default_value = "text")]
     format: OutputFormat,
-
-    /// Number of spaces to indent
-    #[arg(short, long, default_value_t = 2)]
-    indent: usize,
 }
 
 #[derive(clap::ValueEnum, Clone)]

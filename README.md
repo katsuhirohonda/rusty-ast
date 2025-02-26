@@ -47,8 +47,6 @@ rusty-ast -c "fn main() { println!(\"Hello, world!\"); }"
 # Output in JSON format
 rusty-ast -f path/to/your/file.rs -o json
 
-# Change indentation size (default is 2 spaces)
-rusty-ast -f path/to/your/file.rs -i 4
 ```
 
 ### As a Library
