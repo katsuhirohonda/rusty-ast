@@ -1,11 +1,11 @@
 [package]
 name = "rusty-ast"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2024"
 authors = ["Katsuhiro Honda<freewave3@gmail.com>"]
 description = "A tool that analyzes Rust code and visualizes its AST"
 license = "MIT"
-repository = "https://github.com/e-bebe/rusty-ast"
+repository = "https://github.com/katsuhirohonda/rusty-ast"
 keywords = ["ast", "parser", "rust", "visualization", "analysis"]
 categories = ["development-tools", "command-line-utilities"]
 
